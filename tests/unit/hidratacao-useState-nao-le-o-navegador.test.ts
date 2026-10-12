@@ -273,6 +273,13 @@ describe("o inicializador de useState não lê o navegador", () => {
     expect(fontes.has("lib/notifications/prefs.ts")).toBe(true);
   });
 
+  // TETO PRÓPRIO, declarado aqui e não no `testTimeout` global de 15 s: este caso
+  // lê o repositório inteiro (`app|components|lib|hooks`, 3.544 arquivos em
+  // 2026-10-12), e o tempo dele cresce com o código, não com o defeito. Medido
+  // isolado numa máquina Linux de 4 processadores: 8,4 a 11,8 s. Sob a suíte
+  // inteira, com 4 forks, levou 16,05 s e estourou os 15 s sem nenhum vermelho de
+  // verdade. 60 s dão folga de 5× sobre o isolado. Se estourar de novo, ajusta-se
+  // o teto com nova medição; afrouxar a varredura não é a saída.
   it("nenhum arquivo de `app|components|lib|hooks` tem inicializador que lê o navegador", () => {
     const violacoes: string[] = [];
     for (const [rel, fonte] of fontes) {
@@ -287,7 +294,7 @@ describe("o inicializador de useState não lê o navegador", () => {
         "o servidor mandou. Use `useSyncExternalStore` com um " +
         "`getServerSnapshot` determinístico — ver `lib/theme.tsx`.",
     ).toEqual([]);
-  });
+  }, 60_000);
 
   it("CONTROLE POSITIVO: a sonda reprova o padrão do defeito, inclusive através de um import", () => {
     // `lerPrefs()` mora em outro módulo e só lá dentro toca `window`. Se a
